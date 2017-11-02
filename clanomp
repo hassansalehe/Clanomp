@@ -34,22 +34,66 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-home=`pwd`
 
-mkdir -p build && cd build
-CC=clang Cxx=clang++ cmake .. && make
-mkdir -p bin
-cd ..
+# The usage function, details how to use this tool
+Usage() {
+  echo "Usage:"
+  echo "  1. $ clanomp <openmp_file>"
+  echo "   e.g. clanomp src/tests/parallel.c"
+  echo ""
+  echo "  2. $ clanomp --tests"
+  echo "   to compile all tests in src/tests folder"
+  echo ""
+  echo "  3. $ clanomp --help"
+  echo "   to get this help message"
+  echo ""
+}
 
-FILES=($(egrep -l "main.*(.*)" src/tests/*.c))
+if [ $# -eq 0 ]; then
+  # Error: no arguments
+  Usage
+  exit 1
+elif [ $1 == "--help" ]; then
+  # User needs help message
+  Usage
+  exit 0
+else
 
-for file in "${FILES[@]}"; do
-  echo "Translating "$file
-  execbin="$(basename "$file").exe"
+  # Compile the LLVM instrumentation pass
+  mkdir -p build && cd build
+  CC=clang Cxx=clang++ cmake .. && make
+  mkdir -p bin
+  cd ..
 
-  clang -Xclang -load -Xclang ./build/libClanompPass.so	\
-    -I./src/include -g -Wall -O0 -fopenmp --std=c11	\
-    -pthread $file -o build/bin/$execbin
-  echo
-done
+  if [ $1 == "--tests" ]; then
+    # Compile the tests found in src/tests
 
+    FILES=($(egrep -l "main.*(.*)" src/tests/*.c))
+
+    for file in "${FILES[@]}"; do
+      echo -e "\033[1;32mTranslating $file\033[m"
+      execbin="$(basename "$file").exe"
+      clang -Xclang -load -Xclang ./build/libClanompPass.so \
+         -I./src/include -g -Wall -O0 -fopenmp --std=c11    \
+         -pthread $file -o build/bin/$execbin
+
+      echo
+      build/bin/$execbin # execute the compiled program
+      echo
+    done
+
+    else
+      # Compile source code file given as argument
+      file=$1
+      execbin="$(basename "$file").exe"
+      echo
+      echo -e "\033[1;32mTranslating $file\033[m"
+      clang -Xclang -load -Xclang ./build/libClanompPass.so \
+         -I./src/include -g -Wall -O0 -fopenmp --std=c11    \
+         -pthread $file -o build/bin/$execbin
+
+      echo
+      build/bin/$execbin # execute the compiled program
+      echo
+    fi
+fi
