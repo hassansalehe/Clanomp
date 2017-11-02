@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////
 //
-// ClanompPass.cpp
+// flush.c
 //
 // Copyright (c) 2017, Hassan Salehe Matar
 // All rights reserved.
@@ -44,51 +44,39 @@
 //
 //////////////////////////////////////////////////////////////
 
-#include "llvm/Pass.h"
-#include "llvm/IR/Function.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Support/Debug.h"
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
-#include "llvm/IR/LegacyPassManager.h"
+// From the OpenMP specification:
+//
+// * Makes a thread’s temporary view of memory consistent with
+//   memory and enforces an order on the memory operations of
+//   the variables explicitly specified or implied
+//
+// * The binding thread set for a flush region is the encountering
+//   thread. Execution of a flush region affects the memory and
+//   the temporary view of memory of only the thread that executes
+//   the region. It does not affect the temporary view of other
+//   threads. Other threads must themselves execute a flush operation
+//   in order to be guaranteed to observe the effects of the
+//   encountering thread’s flush operation
+//
+//  * A barrier also implies a flush
+//
+// References:
+//  1. http://www.openmp.org/wp-content/uploads/openmp-examples-4.5.0.pdf
+//  2. http://www.openmp.org/wp-content/uploads/openmp-4.5.pdf
 
-#include "Logger.h"
+#include <stdio.h>
+#include <omp.h>
 
-namespace {
+int main() {
 
-// Function pass to instrument .cpp program.
-// It prints functions in the program module.
-struct ClanompPass : public llvm::FunctionPass {
-
-  static char ID;
-  ClanompPass() : FunctionPass(ID) {}
-
-  llvm::StringRef getPassName() const override {
-    return "Clanomp";
+  int count = 0;
+  #pragma omp parallel shared(count)
+  {
+    #pragma omp flush(count)
+    count++;
+    #pragma omp flush(count)
   }
 
-  bool doInitialization(llvm::Module &M) override {
-    return false;
-  }
-
-  bool runOnFunction(llvm::Function &F) override {
-    // print function name
-    llvm::errs().write_escaped(F.getName()) << '\n';
-
-    // save the function body
-    clanomp::logFunction(F);
-    return false;
-  }
-
-}; // end of ClanompPass
-} // end of namespace
-
-char ClanompPass::ID = 0;
-
-static void registerClanompPass(
-  const llvm::PassManagerBuilder &,
-  llvm::legacy::PassManagerBase &PM) { PM.add(new ClanompPass()); }
-
-static llvm::RegisterStandardPasses regPass(
-   llvm::PassManagerBuilder::EP_EarlyAsPossible,
-   registerClanompPass);
-
+  printf("Value of count: %d, construct: <flush>\n", count);
+  return 0;
+}

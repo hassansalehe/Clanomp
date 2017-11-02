@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////
 //
-// ClanompPass.cpp
+// atomic.c
 //
 // Copyright (c) 2017, Hassan Salehe Matar
 // All rights reserved.
@@ -44,51 +44,29 @@
 //
 //////////////////////////////////////////////////////////////
 
-#include "llvm/Pass.h"
-#include "llvm/IR/Function.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Support/Debug.h"
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
-#include "llvm/IR/LegacyPassManager.h"
+// From the OpenMP specification:
+// * "atomic" ensures specific memory location is accessed
+//    atomically
+//
+// * #pragma omp atomic (read|write|update|capture)
+//    expression <statement|block>
+//
+// References:
+//  1. http://www.openmp.org/wp-content/uploads/openmp-examples-4.5.0.pdf
+//  2. http://www.openmp.org/wp-content/uploads/openmp-4.5.pdf
 
-#include "Logger.h"
+#include <stdio.h>
+#include <omp.h>
 
-namespace {
+int main() {
 
-// Function pass to instrument .cpp program.
-// It prints functions in the program module.
-struct ClanompPass : public llvm::FunctionPass {
-
-  static char ID;
-  ClanompPass() : FunctionPass(ID) {}
-
-  llvm::StringRef getPassName() const override {
-    return "Clanomp";
+  int count = 0;
+  #pragma omp parallel shared(count)
+  {
+    #pragma omp atomic
+      count++;
   }
 
-  bool doInitialization(llvm::Module &M) override {
-    return false;
-  }
-
-  bool runOnFunction(llvm::Function &F) override {
-    // print function name
-    llvm::errs().write_escaped(F.getName()) << '\n';
-
-    // save the function body
-    clanomp::logFunction(F);
-    return false;
-  }
-
-}; // end of ClanompPass
-} // end of namespace
-
-char ClanompPass::ID = 0;
-
-static void registerClanompPass(
-  const llvm::PassManagerBuilder &,
-  llvm::legacy::PassManagerBase &PM) { PM.add(new ClanompPass()); }
-
-static llvm::RegisterStandardPasses regPass(
-   llvm::PassManagerBuilder::EP_EarlyAsPossible,
-   registerClanompPass);
-
+  printf("Value of count: %d, construct: <atomic>\n", count);
+  return 0;
+}

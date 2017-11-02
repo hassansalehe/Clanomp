@@ -45,18 +45,23 @@
 //////////////////////////////////////////////////////////////
 
 // This program includes the "parallel" construct.
-// Each thread prints its own thread id.
+// In thia example each thread prints its own thread id.
+//
+// References:
+//  1. http://www.openmp.org/wp-content/uploads/openmp-examples-4.5.0.pdf
+//  2. http://www.openmp.org/wp-content/uploads/openmp-4.5.pdf
 
 #include <stdio.h>
 #include <omp.h>
 
 int main() {
 
-  #pragma omp parallel
+  int count = 0;
+  #pragma omp parallel shared(count)
   {
-    int mid = omp_get_thread_num();
-    printf("Thread(id: %d) printing\n", mid);
+    count++;
   }
 
+  printf("Value of count: %d, construct: <parallel>\n", count);
   return 0;
 }
