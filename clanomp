@@ -42,7 +42,6 @@ mkdir -p bin
 cd ..
 
 FILES=($(egrep -l "main.*(.*)" src/tests/*.c))
-echo $FILES
 
 for file in "${FILES[@]}"; do
   echo "Translating "$file

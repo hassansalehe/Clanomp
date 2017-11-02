@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////
 //
-// master.cpp
+// parallel.c
 //
 // Copyright (c) 2017, Hassan Salehe Matar
 // All rights reserved.
