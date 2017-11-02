@@ -37,7 +37,7 @@
 home=`pwd`
 
 mkdir -p build && cd build
-cmake .. && make
+CC=clang Cxx=clang++ cmake .. && make
 mkdir -p bin
 cd ..
 
