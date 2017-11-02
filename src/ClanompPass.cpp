@@ -51,28 +51,27 @@
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/IR/LegacyPassManager.h"
 
-using namespace llvm;
-
 namespace {
 
 // Function pass to instrument .cpp program.
 // It prints functions in the program module.
-struct ClanompPass : public FunctionPass {
+struct ClanompPass : public llvm::FunctionPass {
 
   static char ID;
   ClanompPass() : FunctionPass(ID) {}
 
-  StringRef getPassName() const override {
+  llvm::StringRef getPassName() const override {
     return "Clanomp";
   }
 
-  bool doInitialization(Module &M) override {
+  bool doInitialization(llvm::Module &M) override {
     return false;
   }
 
-  bool runOnFunction(Function &F) override {
+  bool runOnFunction(llvm::Function &F) override {
     // print function name
-    errs().write_escaped(F.getName()) << '\n';
+    llvm::errs().write_escaped(F.getName()) << '\n';
+
     return false;
   }
 
@@ -82,10 +81,10 @@ struct ClanompPass : public FunctionPass {
 char ClanompPass::ID = 0;
 
 static void registerClanompPass(
-  const PassManagerBuilder &,
-  legacy::PassManagerBase &PM) { PM.add(new ClanompPass()); }
+  const llvm::PassManagerBuilder &,
+  llvm::legacy::PassManagerBase &PM) { PM.add(new ClanompPass()); }
 
-static RegisterStandardPasses regPass(
-   PassManagerBuilder::EP_EarlyAsPossible,
+static llvm::RegisterStandardPasses regPass(
+   llvm::PassManagerBuilder::EP_EarlyAsPossible,
    registerClanompPass);
 
